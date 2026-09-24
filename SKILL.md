@@ -12,7 +12,7 @@ Use Jev as an optional decision aid inside Codex. Codex remains responsible for 
 1. Inspect the user request and relevant project evidence first. Reduce the decision to small, concrete questions.
 2. Use Jev only when its answer could change a design or coding choice. Send only the minimum necessary context; do not send the entire conversation, repository, secrets, or unrelated source files.
 3. If `TYPESAFE_API_KEY` is unavailable, Jev returns an API error, or the task is not suited to a typed judgment, continue using normal Codex reasoning and repository evidence. Never invent a Jev result.
-4. Submit JSON to `scripts/jev_decide.py` from this skill directory. The request follows TypeSafe's System One API schema: `state`, `questions`, and optionally `model`.
+4. Submit JSON to `scripts/jev_decide.py` from this skill directory. The request follows TypeSafe's System One API schema and must include `model`, `state`, and `questions`. Use a model name returned by `GET /v1/models` (for example, `jev-latest`).
 5. Use `choice` for named alternatives, `score` for a rubric, and `noul` for a focused yes/no judgment. Keep questions atomic; combine separate judgments in code or in Codex's own synthesis.
 6. Treat the result as evidence, not authority. Consider the selected value and confidence/probabilities. For consequential or low-confidence choices, inspect evidence further or ask the user. Jev must not approve destructive changes, security-sensitive actions, deployments, or external side effects.
 7. Explain the decision in ordinary language and distinguish Jev's judgment from facts found in the project. Do not claim certainty from a confidence score.
@@ -21,6 +21,7 @@ Use Jev as an optional decision aid inside Codex. Codex remains responsible for 
 
 ```json
 {
+  "model": "jev-latest",
   "state": {
     "task": "Choose an integration shape for a reusable Codex decision helper",
     "constraints": ["works across projects", "small initial implementation", "no UI"],

@@ -24,7 +24,13 @@ Jev-Codex は、TypeSafe AI の Jev を Codex の判断補助として使うた�
 
 ## APIキーの設定
 
-Codexを起動する環境で `TYPESAFE_API_KEY` を設定してください。APIキーをソースコードやリポジトリに書き込まないでください。
+このフォルダの `.env` にAPIキーを設定できます。`.env` はGitの追跡対象外です。APIキーをソースコードやリポジトリに書き込まないでください。
+
+```text
+TYPESAFE_API_KEY=your-api-key
+```
+
+スクリプトは `.env` を自動で読み込みます。PowerShellで環境変数を設定済みの場合は、そちらの値を優先します。
 
 PowerShellの現在のセッションだけに設定する例:
 
@@ -34,10 +40,10 @@ $env:TYPESAFE_API_KEY = "your-api-key"
 
 ## 判断リクエストの実行
 
-このフォルダで、`state` と `questions` を含むJSONを標準入力から渡します。
+このフォルダで、`model`、`state`、`questions` を含むJSONを標準入力から渡します。利用できるモデル名はTypeSafe APIの `GET /v1/models` で確認できます。例では `jev-latest` を使います。
 
 ```powershell
-Get-Content request.json -Raw | python scripts/jev_decide.py
+Get-Content request.example.json -Raw | py scripts/jev_decide.py
 ```
 
 質問タイプは `choice`（選択肢から選ぶ）、`score`（基準に沿って採点する）、`noul`（Yes/Noの確率判断）です。質問例とCodex向けの利用方針は `SKILL.md` を参照してください。
