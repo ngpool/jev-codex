@@ -5,7 +5,7 @@
 Jev-Codex は、TypeSafe AI の Jev を Codex の判断補助として使うための、画面を持たない小さなツール一式です。Jev に設計や実装そのものを任せるのではなく、Codex がプロジェクトを確認したうえで、選択肢の比較、優先順位付け、基準に沿ったスコア付け、単純な Yes/No 判断が必要な場面で利用する想定です。
 
 - `SKILL.md` — Jevを使う場面、質問の作り方、結果の扱い方をCodexに伝えるスキル定義です。
-- `scripts/jev_decide.py` — JSON形式の判断依頼をTypeSafeのAPIに送り、構造化された結果を表示するPythonスクリプトです。
+- `scripts/jev_decide.py` — JSON形式の判断依頼をTypeSafeのAPIに送り、構造化された結果を表示するPythonスクリプトです。`--trace` を付けると通信状況を標準エラーに記録します。
 - `README.md` — このプロジェクトの説明と設定手順です。
 
 ## まだ行っていないこと
@@ -43,10 +43,22 @@ $env:TYPESAFE_API_KEY = "your-api-key"
 このフォルダで、`model`、`state`、`questions` を含むJSONを標準入力から渡します。利用できるモデル名はTypeSafe APIの `GET /v1/models` で確認できます。例では `jev-latest` を使います。
 
 ```powershell
-Get-Content request.example.json -Raw | py scripts/jev_decide.py
+Get-Content request.json -Raw | py scripts/jev_decide.py
 ```
 
 質問タイプは `choice`（選択肢から選ぶ）、`score`（基準に沿って採点する）、`noul`（Yes/Noの確率判断）です。質問例とCodex向けの利用方針は `SKILL.md` を参照してください。
+
+### 通信ログを見る
+
+```powershell
+Get-Content request.json -Raw | py scripts/jev_decide.py --trace
+```
+
+`--trace` は送信先、モデル名、入力の種類とサイズ、HTTPステータス、所要時間、応答モデル名、トークン数を標準エラーに表示します。リクエスト本文とAPIキーはログに含めません。必要なら標準エラーをファイルに保存できます。
+
+```powershell
+Get-Content request.json -Raw | py scripts/jev_decide.py --trace 2> jev-trace.log
+```
 
 ## どのプロジェクトでも使う
 
