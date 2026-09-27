@@ -5,7 +5,7 @@
 Jev-Codex は、TypeSafe AI の Jev を Codex の判断補助として使うための、画面を持たない小さなツール一式です。Jev に設計や実装そのものを任せるのではなく、Codex がプロジェクトを確認したうえで、選択肢の比較、優先順位付け、基準に沿ったスコア付け、単純な Yes/No 判断が必要な場面で利用する想定です。
 
 - `SKILL.md` — Jevを使う場面、質問の作り方、結果の扱い方をCodexに伝えるスキル定義です。
-- `scripts/jev_decide.py` — JSON形式の判断依頼をTypeSafeのAPIに送り、構造化された結果を表示するPythonスクリプトです。`--trace` を付けると通信状況を標準エラーに記録します。
+- `scripts/jev_decide.py` — JSON形式の判断依頼をTypeSafeのAPIに送り、構造化された結果を表示するPythonスクリプトです。`--trace` を付けると通信状況を標準エラーと `jev-trace.log` に記録します。
 - `README.md` — このプロジェクトの説明と設定手順です。
 
 ## まだ行っていないこと
@@ -54,11 +54,9 @@ Get-Content request.json -Raw | py scripts/jev_decide.py
 Get-Content request.json -Raw | py scripts/jev_decide.py --trace
 ```
 
-`--trace` は送信先、モデル名、入力の種類とサイズ、HTTPステータス、所要時間、応答モデル名、トークン数を標準エラーに表示します。リクエスト本文とAPIキーはログに含めません。必要なら標準エラーをファイルに保存できます。
+`--trace` は送信先、モデル名、HTTPステータス、所要時間、トークン数に加えて、送信したリクエスト JSON と API の応答 JSON を標準エラーに表示し、リポジトリ直下の `jev-trace.log` に追記します。APIキーは記録しません。リクエストの `state` と回答内容はログに残るため、取り扱いに注意してください。ログファイルは `.gitignore` の対象です。
 
-```powershell
-Get-Content request.json -Raw | py scripts/jev_decide.py --trace 2> jev-trace.log
-```
+`jev-trace.log` を開くと過去のトレースも確認できます。標準エラーを別のファイルに保存したい場合は、コマンドに `2> 別のログファイル名` を付けてください。
 
 ## どのプロジェクトでも使う
 

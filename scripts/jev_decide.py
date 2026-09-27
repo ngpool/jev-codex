@@ -12,6 +12,26 @@ from urllib.request import Request, urlopen
 
 ENDPOINT = "https://api.typesafe.ai/v1/systemone"
 ENV_FILE = Path(__file__).resolve().parent.parent / ".env"
+TRACE_LOG_FILE = Path(__file__).resolve().parent.parent / "jev-trace.log"
+
+
+def log_trace(message: str) -> None:
+    """Write trace metadata to stderr and append it to the local trace log."""
+    print(message, file=sys.stderr)
+    timestamp = time.strftime("%Y-%m-%dT%H:%M:%S%z")
+    try:
+        if TRACE_LOG_FILE.exists() and TRACE_LOG_FILE.stat().st_size:
+            with TRACE_LOG_FILE.open("rb") as existing_log:
+                existing_log.seek(-1, os.SEEK_END)
+                needs_separator = existing_log.read(1) != b"\n"
+        else:
+            needs_separator = False
+        with TRACE_LOG_FILE.open("a", encoding="utf-8") as log_file:
+            if needs_separator:
+                log_file.write("\n")
+            log_file.write(f"{timestamp} {message}\n")
+    except OSError as exc:
+        print(f"[jev trace] could not write {TRACE_LOG_FILE}: {exc}", file=sys.stderr)
 
 
 def load_api_key_from_env_file() -> None:
@@ -45,7 +65,7 @@ def main() -> int:
     parser.add_argument(
         "--trace",
         action="store_true",
-        help="log request and response metadata to stderr (never logs the request body or API key)",
+        help="log request and response details to stderr and jev-trace.log (never logs the API key)",
     )
     args = parser.parse_args()
 
@@ -81,11 +101,14 @@ def main() -> int:
         questions = payload.get("questions")
         question_count = len(questions) if isinstance(questions, dict) else "unknown"
         state = payload.get("state")
-        print(
+        log_trace(
             f"[jev trace] POST {ENDPOINT}; model={payload.get('model', 'unknown')}; "
             f"state_type={type(state).__name__}; questions={question_count}; "
-            f"request_bytes={len(request_body)}",
-            file=sys.stderr,
+            f"request_bytes={len(request_body)}"
+        )
+        log_trace(
+            "[jev trace] request="
+            + json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
         )
 
     try:
@@ -95,20 +118,21 @@ def main() -> int:
     except HTTPError as exc:
         elapsed = time.perf_counter() - started_at
         if args.trace:
-            print(
-                f"[jev trace] HTTP {exc.code}; elapsed={elapsed:.3f}s",
-                file=sys.stderr,
-            )
+            log_trace(f"[jev trace] HTTP {exc.code}; elapsed={elapsed:.3f}s")
         detail = exc.read().decode("utf-8", errors="replace")
+        if args.trace:
+            log_trace(
+                "[jev trace] response_error="
+                + json.dumps(detail, ensure_ascii=False)
+            )
         print(f"TypeSafe API returned HTTP {exc.code}: {detail}", file=sys.stderr)
         return 1
     except (URLError, TimeoutError) as exc:
         elapsed = time.perf_counter() - started_at
         if args.trace:
-            print(
+            log_trace(
                 f"[jev trace] request failed; elapsed={elapsed:.3f}s; "
-                f"error_type={type(exc).__name__}",
-                file=sys.stderr,
+                f"error_type={type(exc).__name__}"
             )
         print(f"Could not reach TypeSafe API: {exc}", file=sys.stderr)
         return 1
@@ -118,15 +142,19 @@ def main() -> int:
         parsed = json.loads(result)
     except json.JSONDecodeError:
         if args.trace:
-            print(
+            log_trace(
                 f"[jev trace] HTTP {status}; elapsed={elapsed:.3f}s; "
-                "response was not valid JSON",
-                file=sys.stderr,
+                "response was not valid JSON"
             )
+            log_trace("[jev trace] response_raw=" + json.dumps(result, ensure_ascii=False))
         print("TypeSafe API returned a non-JSON response.", file=sys.stderr)
         return 1
 
     if args.trace:
+        log_trace(
+            "[jev trace] response="
+            + json.dumps(parsed, ensure_ascii=False, separators=(",", ":"))
+        )
         usage = parsed.get("usage", {}) if isinstance(parsed, dict) else {}
         usage_summary = ""
         if isinstance(usage, dict):
@@ -134,10 +162,9 @@ def main() -> int:
             output_tokens = usage.get("output_tokens", "unknown")
             usage_summary = f"; input_tokens={input_tokens}; output_tokens={output_tokens}"
         model = parsed.get("model", "unknown") if isinstance(parsed, dict) else "unknown"
-        print(
+        log_trace(
             f"[jev trace] HTTP {status}; elapsed={elapsed:.3f}s; "
-            f"response_model={model}{usage_summary}",
-            file=sys.stderr,
+            f"response_model={model}{usage_summary}"
         )
 
     print(json.dumps(parsed, ensure_ascii=False, indent=2))
