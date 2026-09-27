@@ -1,52 +1,52 @@
 ---
 name: jev-codex
-description: Use TypeSafe AI's Jev model as a bounded, structured judgment layer while planning software design or coding work. Use when a task has concrete alternatives to compare, prioritization, risk scoring, or a focused yes/no judgment. Do not use for implementation, free-form explanations, exact calculations, or as a substitute for inspecting project evidence.
+description: ソフトウェアの設計やコーディングで、具体的な選択肢の比較、優先順位付け、リスク評価、または明確な Yes/No 判断が必要なときに、TypeSafe AI の Jev モデルを範囲を限定した構造的な判断補助として使います。実装、自由形式の説明、厳密な計算、プロジェクトの根拠を調べる作業の代わりには使いません。
 ---
 
 # Jev-Codex
 
-Use Jev as an optional decision aid inside Codex. Codex remains responsible for understanding the request, inspecting the repository, doing the work, and explaining the result. Jev contributes focused judgments; it does not write plans or code.
+Codex の任意の判断補助として Jev を使います。依頼を理解し、リポジトリを調べ、作業を行い、結果を説明する責任は Codex にあります。Jev は焦点を絞った判断を補助しますが、計画やコードは作成しません。
 
-## Workflow
+## 手順
 
-1. Inspect the user request and relevant project evidence first. Reduce the decision to small, concrete questions.
-2. Use Jev only when its answer could change a design or coding choice. Send only the minimum necessary context; do not send the entire conversation, repository, secrets, or unrelated source files.
-3. If `TYPESAFE_API_KEY` is unavailable, Jev returns an API error, or the task is not suited to a typed judgment, continue using normal Codex reasoning and repository evidence. Never invent a Jev result.
-4. Submit JSON to `scripts/jev_decide.py` from this skill directory. The request follows TypeSafe's System One API schema and must include `model`, `state`, and `questions`. Use a model name returned by `GET /v1/models` (for example, `jev-latest`).
-5. Use `choice` for named alternatives, `score` for a rubric, and `noul` for a focused yes/no judgment. Keep questions atomic; combine separate judgments in code or in Codex's own synthesis.
-6. Treat the result as evidence, not authority. Consider the selected value and confidence/probabilities. For consequential or low-confidence choices, inspect evidence further or ask the user. Jev must not approve destructive changes, security-sensitive actions, deployments, or external side effects.
-7. Explain the decision in ordinary language and distinguish Jev's judgment from facts found in the project. Do not claim certainty from a confidence score.
+1. まずユーザーの依頼と関連するプロジェクトの根拠を確認します。判断事項を、小さく具体的な質問に整理します。
+2. Jev の回答によって設計や実装の選択が変わりうる場合に限り、Jev を使います。必要最小限の情報だけを送信し、会話全体、リポジトリ全体、秘密情報、無関係なソースファイルは送信しません。
+3. `TYPESAFE_API_KEY` が設定されていない場合、Jev が API エラーを返した場合、またはタスクが型付き判断に適さない場合は、通常の Codex の推論とリポジトリの根拠を使って作業を続けます。Jev の結果を捏造してはいけません。
+4. このスキルのディレクトリから `scripts/jev_decide.py` に JSON を渡します。リクエストは TypeSafe の System One API スキーマに従い、`model`、`state`、`questions` を含めます。`GET /v1/models` が返すモデル名（例: `jev-latest`）を使います。
+5. 名前付きの選択肢には `choice`、評価基準には `score`、焦点を絞った Yes/No 判断には `noul` を使います。質問はそれぞれ独立させ、別々の判断を組み合わせる場合はコードまたは Codex 自身の統合判断で行います。
+6. 結果は権威ではなく根拠の一つとして扱います。選ばれた値と確信度・確率を考慮します。影響の大きい判断や確信度の低い判断では、さらに根拠を調べるかユーザーに確認します。破壊的変更、セキュリティ上重要な操作、デプロイ、外部への副作用を Jev に許可させてはいけません。
+7. 判断を平易な言葉で説明し、Jev の判断とプロジェクト内で確認した事実を区別します。確信度の数値を根拠に確実だと主張してはいけません。
 
-## Example request
+## リクエスト例
 
 ```json
 {
   "model": "jev-latest",
   "state": {
-    "task": "Choose an integration shape for a reusable Codex decision helper",
-    "constraints": ["works across projects", "small initial implementation", "no UI"],
+    "task": "再利用可能な Codex 判断補助の連携方式を選ぶ",
+    "constraints": ["複数のプロジェクトで使える", "初期実装が小さい", "UI は不要"],
     "alternatives": {
-      "skill": "A global Codex skill invokes Jev for bounded decisions",
-      "mcp": "A standalone MCP server exposes Jev as a tool"
+      "skill": "Jev を呼び出して範囲を限定した判断を行うグローバル Codex スキル",
+      "mcp": "Jev をツールとして公開する独立した MCP サーバー"
     }
   },
   "questions": {
     "approach": {
       "type": "choice",
-      "instructions": "Which approach best fits the stated constraints?",
+      "instructions": "提示された制約に最も合う方式はどれですか？",
       "criteria": {
-        "skill": "Simple to install globally with minimal runtime infrastructure",
-        "mcp": "Best when an always-available reusable tool interface is required"
+        "skill": "実行基盤を最小限にして、簡単にグローバルインストールできる",
+        "mcp": "常時利用できる再利用可能なツールインターフェースが必要な場合に適する"
       }
     }
   }
 }
 ```
 
-Run from the skill directory:
+スキルのディレクトリから実行します。
 
 ```powershell
 Get-Content request.json -Raw | python scripts/jev_decide.py
 ```
 
-The helper reads `TYPESAFE_API_KEY` from the environment, calls the official TypeSafe endpoint, and prints the structured response as JSON. Keep the key out of source control and request data.
+この補助スクリプトは環境変数から `TYPESAFE_API_KEY` を読み込み、TypeSafe の公式エンドポイントを呼び出して、構造化された応答を JSON で表示します。キーをソース管理やリクエストデータに含めないでください。
