@@ -1,0 +1,15 @@
+Unable to fetch the `Request.cf` object! Falling back to a default placeholder...
+Error: unable to verify the first certificate; if the root CA is installed locally, try running Node.js with --use-system-ca
+    at TLSSocket.onConnectSecure (node:internal/tls/wrap:1775:34)
+    at TLSSocket.emit (node:events:514:28)
+    at TLSSocket.emit (node:domain:489:12)
+    at TLSSocket._finishInit (node:internal/tls/wrap:1203:8)
+    at ssl.onhandshakedone (node:internal/tls/wrap:984:12)
+4:01:14 [vite+] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+4:01:17 [vite+] (client) [console.error] Social data could not be loaded: ReferenceError: hunterRoot is not defined
+    at http://localhost:8000/battle3d.js:176:9
+    at Array.forEach (<anonymous>)
+    at setCharacters (http://localhost:8000/battle3d.js:152:13)
+    at Object.setParty (http://localhost:8000/battle3d.js:317:110)
+    at refreshSocial (http://localhost:8000/app.js:120:22)
+4:01:54 [vite+] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.

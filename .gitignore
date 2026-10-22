@@ -5,3 +5,9 @@ venv/
 .env
 .env.*
 /jev-trace.log
+node_modules
+dist
+.void
+.wrangler
+*.tsbuildinfo
+.DS_Store
